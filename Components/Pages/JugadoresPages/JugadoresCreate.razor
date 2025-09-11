@@ -3,7 +3,7 @@
 @inject NavigationManager Navigation
 @inject Registro.Services.JugadoresServices jugadoresServices
 
-<h3>CreadorDeJugadores</h3>
+<h3>JugadoresCreate</h3>
 
 <EditForm Model="Jugador" OnValidSubmit="Guardar">
     <DataAnnotationsValidator />
@@ -56,7 +56,7 @@
         var ok = await jugadoresServices.Guardar(Jugador);
         if (ok)
         {
-            Navigation.NavigateTo("/"); // Home
+            Navigation.NavigateTo("/"); 
         }
     }
 }
