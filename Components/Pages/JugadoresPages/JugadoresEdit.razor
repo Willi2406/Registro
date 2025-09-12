@@ -2,6 +2,7 @@
 @using Registro.Models
 @inject Registro.Services.JugadoresServices jugadoresService
 @inject NavigationManager navigationManager
+@rendermode InteractiveServer 
 
 <PageTitle>Modificar Jugador</PageTitle>
 
@@ -35,7 +36,7 @@
             </div>
 
             <div class="card-footer text-center mt-2">
-                <a href="/Jugadores/Index" class="btn btn-secondary">Volver</a>
+                <a href="/" class="btn btn-secondary">Volver</a>
                 <button type="submit" class="btn btn-primary bi bi-floppy">Guardar</button>
             </div>
         </div>

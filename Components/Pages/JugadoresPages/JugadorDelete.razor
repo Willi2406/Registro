@@ -2,6 +2,7 @@
 @using Registro.Models
 @inject Registro.Services.JugadoresServices jugadoresService
 @inject NavigationManager navigationManager
+@rendermode InteractiveServer
 
 <PageTitle>Eliminar Jugador</PageTitle>
 
@@ -23,7 +24,7 @@
         </div>
 
         <div class="card-footer text-center">
-            <a href="/Jugadores/Index" class="btn btn-primary">Volver</a>
+            <a href="/" class="btn btn-primary">Volver</a>
             <button type="button" class="btn btn-danger bi bi-trash" @onclick="Eliminar">Eliminar</button>
         </div>
     </div>
