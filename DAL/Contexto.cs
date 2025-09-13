@@ -25,11 +25,6 @@ namespace Registro.DAL
                 .WithMany()
                 .HasForeignKey(p => p.Jugador2Id)
                 .OnDelete(DeleteBehavior.NoAction);
-
-                entity.HasOne(p => p.TurnoJugador)
-                .WithMany()
-                .HasForeignKey(p => p.TurnoJugadorId)
-                .OnDelete(DeleteBehavior.NoAction);
             });
             modelBuilder.Entity<Jugadores>().ToTable("Jugadores");
             modelBuilder.Entity<Jugadores>()

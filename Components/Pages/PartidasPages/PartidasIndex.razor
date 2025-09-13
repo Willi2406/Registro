@@ -1,10 +1,161 @@
-﻿@page "/"
+﻿@page "/Partidas/Index"
 @inject NavigationManager Navigation
-@inject Registro.Services.PartidasServices partidasServices
+@inject PartidasServices partidasServices
+@rendermode InteractiveServer
 
-<PageTitle>Registro de partidas</PageTitle>
+<PageTitle>Registro de Partidas</PageTitle>
+
 <h3>PartidasIndex</h3>
 
-@code {
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">Consulta de Partidas</h5>
+            <a href="/Partidas/Create" class="btn btn-primary">
+                <span class="bi bi-plus-square"></span> Crear
+            </a>
+        </div>
 
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-3">
+                    <label class="form-label"><strong>Filtrar por</strong></label>
+                    <InputSelect class="form-select" @bind-Value="Filtro">
+                        <option value="" selected disabled>Elija una opción</option>
+                        <option value="Estado">Estado</option>
+                        <option value="PartidaId">PartidaId</option>
+                        <option value="JugadorId">JugadorId</option>
+                        <option value="Fecha">Fecha (rango)</option>
+                    </InputSelect>
+                </div>
+
+                <div class="col-5" hidden="@(_usaRangoFechas)">
+                    <label class="form-label"><strong>Búsqueda</strong></label>
+                    <div class="input-group">
+                        <input class="form-control" @bind="ValorFiltro" placeholder="Buscar..." />
+                        <button type="button" class="btn btn-outline-primary bi bi-search" @onclick="Buscar"></button>
+                        <button type="button" class="btn btn-outline-secondary" title="Limpiar" @onclick="Limpiar">
+                            <span class="bi bi-eraser"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-3" hidden="@(!_usaRangoFechas)">
+                    <label class="form-label"><strong>Desde</strong></label>
+                    <InputDate DateFormat="yyyy-MM-dd" class="form-control" @bind-Value="Desde" />
+                </div>
+                <div class="col-3" hidden="@(!_usaRangoFechas)">
+                    <label class="form-label"><strong>Hasta</strong></label>
+                    <InputDate DateFormat="yyyy-MM-dd" class="form-control" @bind-Value="Hasta" />
+                </div>
+                <div class="col-2 d-grid" hidden="@(!_usaRangoFechas)">
+                    <button type="button" class="btn btn-outline-primary bi bi-search" @onclick="Buscar">Buscar</button>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-hover">
+                    <thead class="table table-striped text-black">
+                        <tr>
+                            <th>PartidaId</th>
+                            <th>Jugador1Id</th>
+                            <th>Jugador2Id</th>
+                            <th>Estado</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th class="text-center">Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in ListaPartidas)
+                        {
+                            <tr>
+                                <td>@p.PartidaId</td>
+                                <td>@p.Jugador1Id</td>
+                                <td>@(p.Jugador2Id?.ToString() ?? "-")</td>
+                                <td>@p.EstadoPartida</td>
+                                <td>@p.FechaInicio.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@(p.FechaFin.HasValue? p.FechaFin.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-")</td>
+                                <td class="text-center">
+                                    <a href="/Partida/Edit/@p.PartidaId" class="btn btn-outline-primary bi bi-pencil-square" title="Editar"></a>
+                                    <a href="/Partida/Delete/@p.PartidaId" class="btn btn-outline-danger bi bi-trash" title="Eliminar"></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <label>Cantidad: @ListaPartidas.Count()</label>
+            <div class="d-flex gap-3">
+                <label>En curso: @ListaPartidas.Count(x => EsEstado(x, "EnCurso"))</label>
+                <label>Finalizadas: @ListaPartidas.Count(x => EsEstado(x, "Finalizada"))</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Partidas> ListaPartidas { get; set; } = new();
+
+    private string Filtro { get; set; } = string.Empty;
+    private string ValorFiltro { get; set; } = string.Empty;
+    private DateTime? Desde { get; set; }
+    private DateTime? Hasta { get; set; }
+
+    private bool _usaRangoFechas => Filtro == "Fecha";
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListaPartidas = await partidasServices.Listar(p => p.PartidaId > 0);
+    }
+
+    private async Task Buscar()
+    {
+        if (Filtro == "Estado" && !string.IsNullOrWhiteSpace(ValorFiltro))
+        {
+            var v = ValorFiltro.ToLower();
+            ListaPartidas = await partidasServices.Listar(p => p.EstadoPartida.ToLower().Contains(v));
+        }
+        else if (Filtro == "PartidaId" && int.TryParse(ValorFiltro, out var partidaId))
+        {
+            ListaPartidas = await partidasServices.Listar(p => p.PartidaId == partidaId);
+        }
+        else if (Filtro == "JugadorId" && int.TryParse(ValorFiltro, out var jugadorId))
+        {
+            ListaPartidas = await partidasServices.Listar(p => p.Jugador1Id == jugadorId || p.Jugador2Id == jugadorId);
+        }
+        else if (Filtro == "Fecha")
+        {
+            if (Desde is null && Hasta is null)
+            {
+                ListaPartidas = await partidasServices.Listar(p => p.PartidaId > 0);
+                return;
+            }
+
+            var desde = Desde ?? DateTime.MinValue;
+            
+            var hasta = (Hasta?.Date.AddDays(1).AddTicks(-1)) ?? DateTime.MaxValue;
+
+            ListaPartidas = await partidasServices.Listar(p => p.FechaInicio >= desde && p.FechaInicio <= hasta);
+        }
+        else
+        {
+            ListaPartidas = await partidasServices.Listar(p => p.PartidaId > 0);
+        }
+    }
+
+    private void Limpiar()
+    {
+        Filtro = string.Empty;
+        ValorFiltro = string.Empty;
+        Desde = null;
+        Hasta = null;
+        _ = Buscar();
+    }
+
+    private static bool EsEstado(Partidas p, string estado)
+        => string.Equals(p.EstadoPartida, estado, StringComparison.OrdinalIgnoreCase);
 }
