@@ -51,7 +51,7 @@
                             <tr>
                                 <td>@j.JugadorId</td>
                                 <td>@j.Nombres</td>
-                                <td>@j.Partidas</td>
+                                <td>@j.Victorias</td>
                                 <td class="text-center">
                                     <a href="/Jugador/Edit/@j.JugadorId" class="btn btn-outline-primary bi bi-pencil-square" title="Editar"></a>
                                     <a href="/Jugador/Delete/@j.JugadorId" class="btn btn-outline-danger bi bi-trash" title="Eliminar"></a>
@@ -65,7 +65,7 @@
 
         <div class="card-footer d-flex justify-content-between">
             <label>Cantidad: @ListaJugadores.Count()</label>
-            <label>Total Partidas: @ListaJugadores.Sum(x => x.Partidas)</label>
+            <label>Total Partidas: @ListaJugadores.Sum(x => x.Victorias)</label>
         </div>
     </div>
 </div>

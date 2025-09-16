@@ -78,7 +78,6 @@
                                 <td>@(p.FechaFin.HasValue? p.FechaFin.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-")</td>
                                 <td class="text-center">
                                     <a href="/Partida/Edit/@p.PartidaId" class="btn btn-outline-primary bi bi-pencil-square" title="Editar"></a>
-                                    <a href="/Partida/Delete/@p.PartidaId" class="btn btn-outline-danger bi bi-trash" title="Eliminar"></a>
                                 </td>
                             </tr>
                         }

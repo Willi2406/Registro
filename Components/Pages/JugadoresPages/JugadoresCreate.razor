@@ -30,8 +30,8 @@
 
                 <div class="mb-3">
                     <label class="form-label"><strong>Partidas</strong></label>
-                    <InputNumber class="form-control" @bind-Value="Jugador.Partidas" />
-                    <ValidationMessage For="(() => Jugador.Partidas)" />
+                    <InputNumber class="form-control" @bind-Value="Jugador.Victorias" />
+                    <ValidationMessage For="(() => Jugador.Victorias)" />
                 </div>
             </div>
 
@@ -46,7 +46,7 @@
 </EditForm>
 
 @code {
-    public Jugadores Jugador { get; set; } = new() { Partidas = 0 };
+    public Jugadores Jugador { get; set; } = new() { Victorias = 0 };
     public string ErrorNombre { get; set; } = string.Empty;
 
     private async Task Guardar()
