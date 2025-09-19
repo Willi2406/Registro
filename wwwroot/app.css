@@ -58,3 +58,21 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.bi-person-circle {
+   padding-right: 1.5rem;
+   padding-bottom: 2.8rem;
+   font-size: 1.5rem;
+}
+
+.bi-flag {
+    padding-right: 1.5rem;
+    padding-bottom: 2.8rem;
+    font-size: 1.5rem;
+}
+
+.bi-controller {
+    padding-right: 1.5rem;
+    padding-bottom: 2.8rem;
+    font-size: 1.5rem;
+}

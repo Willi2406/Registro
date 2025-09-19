@@ -18,7 +18,9 @@
             <ul class="mt-4">
                 <li><strong>JugadorId: </strong>@Jugador.JugadorId</li>
                 <li><strong>Nombre: </strong>@Jugador.Nombres</li>
-                <li><strong>Partidas: </strong>@Jugador.Victorias</li>
+                <li><strong>Victorias: </strong>@Jugador.Victorias</li>
+                <li><strong>Derrotas: </strong>@Jugador.Derrotas</li>
+                <li><strong>Empates: </strong>@Jugador.empate</li>
             </ul>
         </div>
 
@@ -30,9 +32,7 @@
 </div>
 
 @code {
-    [Parameter]
-    public int JugadorId { get; set; }
-
+    [Parameter] public int JugadorId { get; set; }
     public Jugadores Jugador { get; set; } = new Jugadores();
 
     protected override async Task OnInitializedAsync()
@@ -43,11 +43,10 @@
     public async Task Eliminar()
     {
         var eliminado = await jugadoresService.Eliminar(Jugador.JugadorId);
-
         if (eliminado)
         {
             navigationManager.NavigateTo("/");
         }
-
     }
 }
+

@@ -1,7 +1,7 @@
 ﻿@page "/Jugador/Edit/{JugadorId:int}"
 @inject Registro.Services.JugadoresServices jugadoresService
 @inject NavigationManager navigationManager
-@rendermode InteractiveServer 
+@rendermode InteractiveServer
 
 <PageTitle>Modificar Jugador</PageTitle>
 
@@ -27,10 +27,20 @@
                     <ValidationMessage For="(() => Jugador.Nombres)" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label"><strong>Partidas</strong></label>
-                    <InputNumber class="form-control" @bind-Value="Jugador.Victorias" />
-                    <ValidationMessage For="(() => Jugador.Victorias)" />
+                <!-- Conteos derivados: solo lectura -->
+                <div class="row g-3">
+                    <div class="col">
+                        <label class="form-label"><strong>Victorias</strong></label>
+                        <input class="form-control" value="@Jugador.Victorias" readonly />
+                    </div>
+                    <div class="col">
+                        <label class="form-label"><strong>Derrotas</strong></label>
+                        <input class="form-control" value="@Jugador.Derrotas" readonly />
+                    </div>
+                    <div class="col">
+                        <label class="form-label"><strong>Empates</strong></label>
+                        <input class="form-control" value="@Jugador.empate" readonly />
+                    </div>
                 </div>
             </div>
 
@@ -43,9 +53,7 @@
 </EditForm>
 
 @code {
-    [Parameter]
-    public int JugadorId { get; set; }
-
+    [Parameter] public int JugadorId { get; set; }
     public Jugadores Jugador { get; set; } = new Jugadores();
     public string ErrorNombre { get; set; } = string.Empty;
 
@@ -62,6 +70,7 @@
             j.Nombres == Jugador.Nombres && j.JugadorId != Jugador.JugadorId)).Any();
         if (existeOtro)
         {
+            ErrorNombre = "Ya existe otro jugador con ese nombre.";
             return;
         }
 

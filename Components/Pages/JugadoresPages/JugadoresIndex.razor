@@ -1,10 +1,9 @@
 ﻿@page "/"
 @inject NavigationManager Navigation
 @inject JugadoresServices jugadoresServices
+@rendermode InteractiveServer
 
 <PageTitle>Registro de Jugadores</PageTitle>
-
-<h3>JugadoresIndex</h3>
 
 <div class="container">
     <div class="card shadow-lg">
@@ -29,10 +28,14 @@
                 <div class="col-5">
                     <label class="form-label"><strong>Búsqueda</strong></label>
                     <div class="input-group">
-                        <input class="form-control" @bind="ValorFiltro" placeholder="Buscar..." />
+                        <input class="form-control" @bind="ValorFiltro" @bind:event="oninput" placeholder="Buscar..." />
                         <button type="button" class="btn btn-outline-primary bi bi-search" @onclick="Buscar"></button>
+                        <button type="button" class="btn btn-outline-secondary" title="Limpiar" @onclick="Limpiar">
+                            <span class="bi bi-eraser"></span>
+                        </button>
                     </div>
                 </div>
+
             </div>
 
             <div class="table-responsive mt-3">
@@ -41,17 +44,24 @@
                         <tr>
                             <th>JugadorId</th>
                             <th>Nombres</th>
-                            <th>Partidas</th>
+                            <th>Victorias</th>
+                            <th>Derrotas</th>
+                            <th>Empates</th>
+                            <th>Total</th>
                             <th>Opciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var j in ListaJugadores)
                         {
+                            var total = j.Victorias + j.Derrotas + j.empate;
                             <tr>
                                 <td>@j.JugadorId</td>
                                 <td>@j.Nombres</td>
                                 <td>@j.Victorias</td>
+                                <td>@j.Derrotas</td>
+                                <td>@j.empate</td>
+                                <td>@total</td>
                                 <td class="text-center">
                                     <a href="/Jugador/Edit/@j.JugadorId" class="btn btn-outline-primary bi bi-pencil-square" title="Editar"></a>
                                     <a href="/Jugador/Delete/@j.JugadorId" class="btn btn-outline-danger bi bi-trash" title="Eliminar"></a>
@@ -65,7 +75,11 @@
 
         <div class="card-footer d-flex justify-content-between">
             <label>Cantidad: @ListaJugadores.Count()</label>
-            <label>Total Partidas: @ListaJugadores.Sum(x => x.Victorias)</label>
+            <div class="d-flex gap-3">
+                <label>Total Victorias: @ListaJugadores.Sum(x => x.Victorias)</label>
+                <label>Total Derrotas: @ListaJugadores.Sum(x => x.Derrotas)</label>
+                <label>Total Empates: @ListaJugadores.Sum(x => x.empate)</label>
+            </div>
         </div>
     </div>
 </div>
@@ -100,5 +114,12 @@
             ListaJugadores = await jugadoresServices.Listar(j => j.JugadorId > 0);
         }
     }
-}
 
+    private async Task Limpiar()
+    {
+        Filtro = string.Empty;
+        ValorFiltro = string.Empty;
+        ListaJugadores = await jugadoresServices.Listar(j => j.JugadorId > 0);
+    }
+
+}

@@ -7,8 +7,6 @@
 
 <PageTitle>Crear Partida</PageTitle>
 
-<h3>PartidasCreate</h3>
-
 <EditForm Model="@Partida" OnValidSubmit="Guardar">
     <DataAnnotationsValidator />
     <ValidationSummary />
@@ -20,14 +18,14 @@
             </div>
 
             <div class="card-body">
-                <!-- Jugador 1 (requerido) -->
+                <!-- Jugador 1 -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Jugador 1</strong></label>
                     <InputSelect class="form-select" @bind-Value="Partida.Jugador1Id">
                         <option value="0" selected disabled>Seleccione el Jugador 1</option>
                         @foreach (var j in Jugadores)
                         {
-                            <option value="@j.JugadorId">@j.JugadorId — @j.Nombres</option>
+                            <option value="@j.JugadorId">@j.JugadorId - @j.Nombres</option>
                         }
                     </InputSelect>
                     @if (!string.IsNullOrEmpty(ErrorJugador1))
@@ -36,14 +34,14 @@
                     }
                 </div>
 
-                <!-- Jugador 2 (opcional) -->
+                <!-- Jugador 2 -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Jugador 2 (opcional)</strong></label>
                     <InputSelect class="form-select" @bind-Value="Partida.Jugador2Id">
-                        <option value="">— Sin oponente por ahora —</option>
+                        <option value=""> Sin oponente por ahora </option>
                         @foreach (var j in Jugadores)
                         {
-                            <option value="@j.JugadorId">@j.JugadorId — @j.Nombres</option>
+                            <option value="@j.JugadorId">@j.JugadorId - @j.Nombres</option>
                         }
                     </InputSelect>
                     @if (!string.IsNullOrEmpty(ErrorJugador2))
@@ -52,7 +50,7 @@
                     }
                 </div>
 
-                
+                <!-- Estado Partida -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Estado</strong></label>
                     <InputSelect class="form-select" @bind-Value="Partida.EstadoPartida">
@@ -63,13 +61,14 @@
                     </InputSelect>
                 </div>
 
-               
+                <!-- Estado del Tablero -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Estado del Tablero</strong></label>
                     <InputText class="form-control" @bind-Value="Partida.EstadoTablero" maxlength="9" />
                     <div class="form-text">Formato simple: 9 posiciones (ej. "---------").</div>
                 </div>
 
+                <!-- Fechas -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label"><strong>Fecha Inicio</strong></label>
@@ -91,7 +90,9 @@
                 <a href="/Partidas/Index" class="btn btn-secondary">
                     <span class="bi bi-arrow-left"></span> Volver
                 </a>
-                <button type="submit" class="btn btn-primary bi bi-floppy"> Guardar</button>
+                <button type="submit" class="btn btn-primary bi bi-floppy">
+                    Guardar
+                </button>
             </div>
         </div>
     </div>
@@ -108,7 +109,6 @@
     private List<Jugadores> Jugadores { get; set; } = new();
     private readonly string[] EstadosPermitidos = new[] { "EnCurso", "Pendiente", "Finalizada" };
 
-   
     private string ErrorJugador1 { get; set; } = string.Empty;
     private string ErrorJugador2 { get; set; } = string.Empty;
     private string ErrorGeneral { get; set; } = string.Empty;
@@ -116,23 +116,19 @@
     protected override async Task OnInitializedAsync()
     {
         Jugadores = await jugadoresServices.Listar(j => j.JugadorId > 0);
-       
         Partida.TurnoJugadorId = Partida.Jugador1Id;
     }
 
     private async Task Guardar()
     {
-       
         ErrorJugador1 = ErrorJugador2 = ErrorGeneral = string.Empty;
 
-       
         if (Partida.Jugador1Id <= 0)
         {
             ErrorJugador1 = "Debe seleccionar el Jugador 1.";
             return;
         }
 
-       
         var existeJ1 = await jugadoresServices.Existe(Partida.Jugador1Id);
         if (!existeJ1)
         {
@@ -156,7 +152,6 @@
             }
         }
 
-        
         if (string.IsNullOrWhiteSpace(Partida.EstadoPartida))
             Partida.EstadoPartida = "EnCurso";
 
@@ -172,7 +167,6 @@
         if (Partida.TurnoJugadorId == 0)
             Partida.TurnoJugadorId = Partida.Jugador1Id;
 
-        
         var ok = await partidasServices.Guardar(Partida);
         if (ok)
         {
@@ -184,13 +178,12 @@
         }
     }
 
-    
     private void OnChangeJugador1(ChangeEventArgs e)
     {
         if (int.TryParse(e?.Value?.ToString(), out var j1))
         {
             Partida.Jugador1Id = j1;
-            Partida.TurnoJugadorId = j1; 
+            Partida.TurnoJugadorId = j1;
         }
     }
 }

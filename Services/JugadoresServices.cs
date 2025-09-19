@@ -64,6 +64,30 @@ namespace Registro.Services
             return await ctx.SaveChangesAsync() > 0;
         }
 
+        public async Task RegistrarVictoria(int ganadorId, int perdedorId)
+        {
+            var gan = await Buscar(ganadorId);
+            var per = await Buscar(perdedorId);
+            if (gan is null || per is null) return;
+
+            gan.Victorias += 1;
+            per.Derrotas += 1;
+            await Guardar(gan);
+            await Guardar(per);
+        }
+
+        public async Task RegistrarEmpate(int jugador1Id, int jugador2Id)
+        {
+            var j1 = await Buscar(jugador1Id);
+            var j2 = await Buscar(jugador2Id);
+            if (j1 is null || j2 is null) return;
+
+            j1.empate += 1;
+            j2.empate += 1;
+            await Guardar(j1);
+            await Guardar(j2);
+        }
+
 
         public async Task<List<Jugadores>> Listar(Expression<Func<Jugadores, bool>> criterio)
         {

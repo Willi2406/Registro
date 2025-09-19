@@ -4,8 +4,7 @@
 @inject Registro.Services.JugadoresServices jugadoresServices
 @rendermode InteractiveServer
 
-
-<h3>JugadoresCreate</h3>
+<PageTitle>Crear Jugador</PageTitle>
 
 <EditForm Model="Jugador" OnValidSubmit="Guardar">
     <DataAnnotationsValidator />
@@ -28,10 +27,20 @@
                     }
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label"><strong>Partidas</strong></label>
-                    <InputNumber class="form-control" @bind-Value="Jugador.Victorias" />
-                    <ValidationMessage For="(() => Jugador.Victorias)" />
+                <!-- Los conteos vienen del resultado del juego, NO se editan aquí -->
+                <div class="row g-3">
+                    <div class="col">
+                        <label class="form-label">Victorias</label>
+                        <input class="form-control" value="@Jugador.Victorias" readonly />
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Derrotas</label>
+                        <input class="form-control" value="@Jugador.Derrotas" readonly />
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Empates</label>
+                        <input class="form-control" value="@Jugador.empate" readonly />
+                    </div>
                 </div>
             </div>
 
@@ -46,7 +55,7 @@
 </EditForm>
 
 @code {
-    public Jugadores Jugador { get; set; } = new() { Victorias = 0 };
+    public Jugadores Jugador { get; set; } = new() { Victorias = 0, Derrotas = 0, empate = 0 };
     public string ErrorNombre { get; set; } = string.Empty;
 
     private async Task Guardar()
@@ -54,11 +63,16 @@
         ErrorNombre = string.Empty;
 
         var existe = (await jugadoresServices.Listar(j => j.Nombres == Jugador.Nombres)).Any();
+        if (existe)
+        {
+            ErrorNombre = "Ya existe otro jugador con ese nombre.";
+            return;
+        }
 
         var ok = await jugadoresServices.Guardar(Jugador);
         if (ok)
         {
-            Navigation.NavigateTo("/"); 
+            Navigation.NavigateTo("/");
         }
     }
 }
