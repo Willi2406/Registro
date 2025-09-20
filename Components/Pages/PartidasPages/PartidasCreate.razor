@@ -3,6 +3,7 @@
 @inject NavigationManager Navigation
 @inject Registro.Services.PartidasServices partidasServices
 @inject Registro.Services.JugadoresServices jugadoresServices
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Crear Partida</PageTitle>
@@ -28,26 +29,18 @@
                             <option value="@j.JugadorId">@j.JugadorId - @j.Nombres</option>
                         }
                     </InputSelect>
-                    @if (!string.IsNullOrEmpty(ErrorJugador1))
-                    {
-                        <div class="text-danger mt-1">@ErrorJugador1</div>
-                    }
                 </div>
 
                 <!-- Jugador 2 -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Jugador 2 (opcional)</strong></label>
                     <InputSelect class="form-select" @bind-Value="Partida.Jugador2Id">
-                        <option value=""> Sin oponente por ahora </option>
+                        <option value="">Sin oponente por ahora</option>
                         @foreach (var j in Jugadores)
                         {
                             <option value="@j.JugadorId">@j.JugadorId - @j.Nombres</option>
                         }
                     </InputSelect>
-                    @if (!string.IsNullOrEmpty(ErrorJugador2))
-                    {
-                        <div class="text-danger mt-1">@ErrorJugador2</div>
-                    }
                 </div>
 
                 <!-- Estado Partida -->
@@ -61,13 +54,6 @@
                     </InputSelect>
                 </div>
 
-                <!-- Estado del Tablero -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>Estado del Tablero</strong></label>
-                    <InputText class="form-control" @bind-Value="Partida.EstadoTablero" maxlength="9" />
-                    <div class="form-text">Formato simple: 9 posiciones (ej. "---------").</div>
-                </div>
-
                 <!-- Fechas -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -79,11 +65,6 @@
                         <input class="form-control" value="-" readonly />
                     </div>
                 </div>
-
-                @if (!string.IsNullOrEmpty(ErrorGeneral))
-                {
-                    <div class="alert alert-danger mt-2">@ErrorGeneral</div>
-                }
             </div>
 
             <div class="card-footer text-center mt-2">
@@ -102,16 +83,11 @@
     private Partidas Partida { get; set; } = new()
     {
         EstadoPartida = "EnCurso",
-        EstadoTablero = "---------",
         FechaInicio = DateTime.UtcNow
     };
 
     private List<Jugadores> Jugadores { get; set; } = new();
     private readonly string[] EstadosPermitidos = new[] { "EnCurso", "Pendiente", "Finalizada" };
-
-    private string ErrorJugador1 { get; set; } = string.Empty;
-    private string ErrorJugador2 { get; set; } = string.Empty;
-    private string ErrorGeneral { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,18 +97,16 @@
 
     private async Task Guardar()
     {
-        ErrorJugador1 = ErrorJugador2 = ErrorGeneral = string.Empty;
-
+        // -------- Validaciones con JS (alert/confirm) ----------
         if (Partida.Jugador1Id <= 0)
         {
-            ErrorJugador1 = "Debe seleccionar el Jugador 1.";
+            await JSRuntime.InvokeVoidAsync("alert", "Debe seleccionar el Jugador 1.");
             return;
         }
 
-        var existeJ1 = await jugadoresServices.Existe(Partida.Jugador1Id);
-        if (!existeJ1)
+        if (!await jugadoresServices.Existe(Partida.Jugador1Id))
         {
-            ErrorJugador1 = "El Jugador 1 no existe.";
+            await JSRuntime.InvokeVoidAsync("alert", "El Jugador 1 no existe.");
             return;
         }
 
@@ -140,14 +114,13 @@
         {
             if (Partida.Jugador2Id.Value == Partida.Jugador1Id)
             {
-                ErrorJugador2 = "Jugador 2 no puede ser el mismo que Jugador 1.";
+                await JSRuntime.InvokeVoidAsync("alert", "Jugador 2 no puede ser el mismo que Jugador 1.");
                 return;
             }
 
-            var existeJ2 = await jugadoresServices.Existe(Partida.Jugador2Id.Value);
-            if (!existeJ2)
+            if (!await jugadoresServices.Existe(Partida.Jugador2Id.Value))
             {
-                ErrorJugador2 = "El Jugador 2 no existe.";
+                await JSRuntime.InvokeVoidAsync("alert", "El Jugador 2 no existe.");
                 return;
             }
         }
@@ -157,33 +130,30 @@
 
         if (!EstadosPermitidos.Contains(Partida.EstadoPartida))
         {
-            ErrorGeneral = "Estado de partida no permitido.";
+            await JSRuntime.InvokeVoidAsync("alert", "Estado de partida no permitido.");
             return;
         }
-
-        if (string.IsNullOrWhiteSpace(Partida.EstadoTablero))
-            Partida.EstadoTablero = "---------";
 
         if (Partida.TurnoJugadorId == 0)
             Partida.TurnoJugadorId = Partida.Jugador1Id;
 
+        // Confirmación antes de guardar
+        bool confirmado = await JSRuntime.InvokeAsync<bool>(
+            "confirm",
+            "¿Está seguro que desea crear esta partida?");
+
+        if (!confirmado) return;
+
         var ok = await partidasServices.Guardar(Partida);
         if (ok)
         {
+            await JSRuntime.InvokeVoidAsync("alert", "Partida creada correctamente.");
             Navigation.NavigateTo("/Partidas/Index");
         }
         else
         {
-            ErrorGeneral = "No se pudo guardar la partida.";
-        }
-    }
-
-    private void OnChangeJugador1(ChangeEventArgs e)
-    {
-        if (int.TryParse(e?.Value?.ToString(), out var j1))
-        {
-            Partida.Jugador1Id = j1;
-            Partida.TurnoJugadorId = j1;
+            await JSRuntime.InvokeVoidAsync("alert", "No se pudo guardar la partida.");
         }
     }
 }
+

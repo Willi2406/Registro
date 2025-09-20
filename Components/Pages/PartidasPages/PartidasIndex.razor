@@ -55,8 +55,8 @@
                     <thead class="table table-striped text-black">
                         <tr>
                             <th>PartidaId</th>
-                            <th>Jugador1Id</th>
-                            <th>Jugador2Id</th>
+                            <th>Jugador1</th>
+                            <th>Jugador2</th>
                             <th>Estado</th>
                             <th>Turno</th>       
                             <th>Ganador</th>      
@@ -70,11 +70,11 @@
                         {
                             <tr>
                                 <td>@p.PartidaId</td>
-                                <td>@p.Jugador1Id</td>
-                                <td>@(p.Jugador2Id?.ToString() ?? "-")</td>
+                                <td>@p.Jugador1?.Nombres</td>
+                                <td>@(p.Jugador2?.Nombres ?? "-")</td>
                                 <td>@p.EstadoPartida</td>
-                                <td>@p.TurnoJugadorId</td>                                           
-                                <td>@(p.GanadorId.HasValue? p.GanadorId.Value.ToString() : "-")</td> 
+                                <td>@p.TurnoJugador?.Nombres</td>
+                                <td>@(p.Ganador?.Nombres ?? "-")</td>
                                 <td>@p.FechaInicio.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>@(p.FechaFin.HasValue? p.FechaFin.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-")</td>
                                 <td class="text-center">

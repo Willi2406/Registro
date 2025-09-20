@@ -1,0 +1,126 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+@using Registro.Models
+@inject Registro.Services.JugadoresServices jugadoresServices
+@inject Registro.Services.PartidasServices partidasServices
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>TicTacToe</PageTitle>
+
+<div class="container mx-auto max-w-lg p-6 bg-white rounded-lg shadow-xl text-center">
+    <div class="game-container" style="display:flex;flex-direction:column;gap:1rem;align-items:center;padding-top:2rem">
+
+        @if (partidaEnCurso != null)
+        {
+            <h2>Ya tienes una partida en curso</h2>
+            <p>
+                <strong>X:</strong> @partidaEnCurso.Jugador1?.Nombres •
+                <strong>O:</strong> @partidaEnCurso.Jugador2?.Nombres
+            </p>
+            <p><strong>Turno:</strong> @partidaEnCurso.TurnoJugador?.Nombres</p>
+
+            <button class="btn btn-primary" @onclick="@(() => IrAJuego(partidaEnCurso.PartidaId))">
+                Ir al tablero
+            </button>
+        }
+        else
+        {
+            <h1>Elige tus jugadores</h1>
+
+            <!-- Jugador X -->
+            <div class="w-100" style="max-width:420px">
+                <label class="form-label d-flex align-items-center gap-2">
+                    <span class="badge bg-primary">X</span>
+                    <strong>Jugador X (azul oscuro)</strong>
+                </label>
+                <InputSelect class="form-select" @bind-Value="JugadorXId">
+                    <option value="0" selected disabled>Seleccione jugador para X</option>
+                    @foreach (var j in Jugadores)
+                    {
+                        <option value="@j.JugadorId">@j.Nombres</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <!-- Jugador O (muestra todos pero deshabilita el que ya es X) -->
+            <div class="w-100" style="max-width:420px">
+                <label class="form-label d-flex align-items-center gap-2">
+                    <span class="badge bg-info text-dark">O</span>
+                    <strong>Jugador O (azul claro)</strong>
+                </label>
+                <InputSelect class="form-select" @bind-Value="JugadorOId">
+                    <option value="0" selected disabled>Seleccione jugador para O</option>
+                    @foreach (var j in Jugadores)
+                    {
+                        <option value="@j.JugadorId" disabled="@(j.JugadorId == JugadorXId)">
+                            @j.Nombres @(j.JugadorId == JugadorXId ? "(seleccionado como X)" : "")
+                        </option>
+                    }
+                </InputSelect>
+            </div>
+
+            <button class="btn btn-success btn-lg mt-2"
+                    disabled="@(JugadorXId <= 0 || JugadorOId <= 0)"
+                    @onclick="StartGameAsync">
+                Iniciar Partida
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Jugadores> Jugadores = new();
+    private int JugadorXId = 0;
+    private int JugadorOId = 0;
+    private Partidas? partidaEnCurso;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 1) Si hay partida en curso, la mostramos y NO permitimos crear otra
+        var enCurso = await partidasServices.Listar(p => p.EstadoPartida == "EnCurso");
+        partidaEnCurso = enCurso.OrderByDescending(p => p.FechaInicio).FirstOrDefault();
+
+        // 2) Cargamos jugadores para el selector cuando no hay partida en curso
+        if (partidaEnCurso is null)
+            Jugadores = await jugadoresServices.Listar(j => j.JugadorId > 0);
+    }
+
+    private async Task StartGameAsync()
+    {
+        if (JugadorXId <= 0 || JugadorOId <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Debes seleccionar ambos jugadores.");
+            return;
+        }
+        if (JugadorXId == JugadorOId)
+        {
+            await JS.InvokeVoidAsync("alert", "No puedes seleccionar el mismo jugador para X y O.");
+            return;
+        }
+
+        var partida = new Partidas
+        {
+            Jugador1Id = JugadorXId,              // X
+            Jugador2Id = JugadorOId,              // O
+            EstadoPartida = "EnCurso",
+            EstadoTablero = "---------",          // 9 casillas
+            TurnoJugadorId = JugadorXId,          // inicia X
+            FechaInicio = DateTime.UtcNow
+        };
+
+        var ok = await partidasServices.Guardar(partida); // Insertar
+        if (!ok)
+        {
+            await JS.InvokeVoidAsync("alert", "Error al crear la partida.");
+            return;
+        }
+
+        IrAJuego(partida.PartidaId);
+    }
+
+    private void IrAJuego(int partidaId)
+        => Nav.NavigateTo($"/Juego?partidaId={partidaId}");
+}
+

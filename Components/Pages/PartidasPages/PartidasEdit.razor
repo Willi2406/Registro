@@ -3,6 +3,7 @@
 @inject Registro.Services.PartidasServices partidasServices
 @inject Registro.Services.JugadoresServices jugadoresServices
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Modificar Partida</PageTitle>
@@ -42,13 +43,9 @@ else
                             <option value="0" disabled>Seleccione el Jugador 1</option>
                             @foreach (var j in Jugadores)
                             {
-                                <option value="@j.JugadorId">@j.JugadorId — @j.Nombres</option>
+                                <option value="@j.JugadorId">@j.JugadorId  @j.Nombres</option>
                             }
                         </InputSelect>
-                        @if (!string.IsNullOrEmpty(ErrorJugador1))
-                        {
-                            <div class="text-danger mt-1">@ErrorJugador1</div>
-                        }
                     </div>
 
                     <div class="mb-3">
@@ -60,10 +57,6 @@ else
                                 <option value="@j.JugadorId">@j.JugadorId — @j.Nombres</option>
                             }
                         </InputSelect>
-                        @if (!string.IsNullOrEmpty(ErrorJugador2))
-                        {
-                            <div class="text-danger mt-1">@ErrorJugador2</div>
-                        }
                     </div>
 
                     <div class="mb-3">
@@ -79,7 +72,7 @@ else
                     <div class="mb-3">
                         <label class="form-label"><strong>Estado del Tablero</strong></label>
                         <InputText class="form-control" @bind-Value="Partida.EstadoTablero" maxlength="9" />
-                        <div class="form-text">9 posiciones (ej. "---------").</div>
+                        <div class="form-text">9 posiciones</div>
                     </div>
 
                     <div class="row">
@@ -96,11 +89,6 @@ else
                             </button>
                         </div>
                     </div>
-
-                    @if (!string.IsNullOrEmpty(ErrorGeneral))
-                    {
-                        <div class="alert alert-danger mt-2">@ErrorGeneral</div>
-                    }
                 </div>
 
                 <div class="card-footer d-flex justify-content-between align-items-center">
@@ -108,45 +96,15 @@ else
                         <span class="bi bi-arrow-left"></span> Volver
                     </a>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-danger bi bi-trash" @onclick="MostrarModalEliminar">Eliminar</button>
+                        <button type="button" class="btn btn-outline-danger bi bi-trash" @onclick="Eliminar">
+                            Eliminar
+                        </button>
                         <button type="submit" class="btn btn-primary bi bi-floppy">Guardar</button>
                     </div>
                 </div>
             </div>
         </div>
     </EditForm>
-
-    @if (mostrarConfirmacionEliminar)
-    {
-        <div class="modal-backdrop fade show"></div>
-        <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index:1055;">
-            <div class="card shadow-lg" style="max-width:600px; width:95%;">
-                <div class="card-header">
-                    <h5 class="card-title m-0">¿Eliminar esta partida?</h5>
-                </div>
-                <div class="card-body">
-                    <p>Estás a punto de eliminar la partida. Verifica los datos:</p>
-                    <ul class="mb-3">
-                        <li><strong>PartidaId:</strong> @Partida.PartidaId</li>
-                        <li><strong>Jugador1Id:</strong> @Partida.Jugador1Id</li>
-                        <li><strong>Jugador2Id:</strong> @(Partida.Jugador2Id?.ToString() ?? "-")</li>
-                        <li><strong>Estado:</strong> @Partida.EstadoPartida</li>
-                        <li><strong>Inicio:</strong> @Partida.FechaInicio.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</li>
-                        <li><strong>Fin:</strong> @(Partida.FechaFin.HasValue? Partida.FechaFin.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-")</li>
-                    </ul>
-                    <div class="alert alert-warning"><strong>Esta acción no se puede deshacer.</strong></div>
-                    @if (!string.IsNullOrEmpty(ErrorEliminar))
-                    {
-                        <div class="alert alert-danger mt-2">@ErrorEliminar</div>
-                    }
-                </div>
-                <div class="card-footer d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary" @onclick="OcultarModalEliminar">Volver</button>
-                    <button class="btn btn-danger bi bi-trash" @onclick="Eliminar">Eliminar definitivamente</button>
-                </div>
-            </div>
-        </div>
-    }
 }
 
 @code {
@@ -154,11 +112,6 @@ else
     private Partidas? Partida { get; set; }
     private List<Jugadores> Jugadores { get; set; } = new();
     private readonly string[] EstadosPermitidos = new[] { "EnCurso", "Pendiente", "Finalizada" };
-    private string ErrorJugador1 { get; set; } = string.Empty;
-    private string ErrorJugador2 { get; set; } = string.Empty;
-    private string ErrorGeneral { get; set; } = string.Empty;
-    private string ErrorEliminar { get; set; } = string.Empty;
-    private bool mostrarConfirmacionEliminar = false;
     private bool cargando = true;
 
     protected override async Task OnInitializedAsync()
@@ -177,18 +130,17 @@ else
     private async Task Modificar()
     {
         if (Partida is null) return;
-        ErrorJugador1 = ErrorJugador2 = ErrorGeneral = string.Empty;
 
+        // -------- Validaciones con JS --------
         if (Partida.Jugador1Id <= 0)
         {
-            ErrorJugador1 = "Debe seleccionar el Jugador 1.";
+            await JSRuntime.InvokeVoidAsync("alert", "Debe seleccionar el Jugador 1.");
             return;
         }
 
-        var existeJ1 = await ExisteJugador(Partida.Jugador1Id);
-        if (!existeJ1)
+        if (!(await ExisteJugador(Partida.Jugador1Id)))
         {
-            ErrorJugador1 = "El Jugador 1 no existe.";
+            await JSRuntime.InvokeVoidAsync("alert", "El Jugador 1 no existe.");
             return;
         }
 
@@ -196,40 +148,45 @@ else
         {
             if (Partida.Jugador2Id.Value == Partida.Jugador1Id)
             {
-                ErrorJugador2 = "Jugador 2 no puede ser el mismo que Jugador 1.";
+                await JSRuntime.InvokeVoidAsync("alert", "Jugador 2 no puede ser el mismo que Jugador 1.");
                 return;
             }
 
-            var existeJ2 = await ExisteJugador(Partida.Jugador2Id.Value);
-            if (!existeJ2)
+            if (!(await ExisteJugador(Partida.Jugador2Id.Value)))
             {
-                ErrorJugador2 = "El Jugador 2 no existe.";
+                await JSRuntime.InvokeVoidAsync("alert", "El Jugador 2 no existe.");
                 return;
             }
         }
 
         if (!EstadosPermitidos.Contains(Partida.EstadoPartida ?? string.Empty))
         {
-            ErrorGeneral = "Estado de partida no permitido.";
+            await JSRuntime.InvokeVoidAsync("alert", "Estado de partida no permitido.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(Partida.EstadoTablero))
             Partida.EstadoTablero = "---------";
 
+        // Si se marca Finalizada sin FechaFin, se coloca ahora
         if (string.Equals(Partida.EstadoPartida, "Finalizada", StringComparison.OrdinalIgnoreCase) && !Partida.FechaFin.HasValue)
             Partida.FechaFin = DateTime.UtcNow;
 
+        // Confirmar guardado
+        var confirmSave = await JSRuntime.InvokeAsync<bool>("confirm", "¿Desea guardar los cambios de esta partida?");
+        if (!confirmSave) return;
+
+        // -------- Guardar --------
         var ok = await partidasServices.Guardar(Partida);
-        if (ok)
-            Navigation.NavigateTo("/Partidas/Index");
-        else
-            ErrorGeneral = "No se pudo guardar la partida.";
-        
-        // ... luego de guardar la Partida y verificar que quedó en "Finalizada"
+        if (!ok)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "No se pudo guardar la partida.");
+            return;
+        }
+
+        // Ajustar estadísticas si quedó Finalizada
         if (string.Equals(Partida.EstadoPartida, "Finalizada", StringComparison.OrdinalIgnoreCase))
         {
-            // Empate (sin ganador)
             if (!Partida.GanadorId.HasValue)
             {
                 if (Partida.Jugador1Id > 0 && Partida.Jugador2Id.HasValue)
@@ -237,7 +194,6 @@ else
             }
             else
             {
-                // Victoria/Derrota
                 var ganador = Partida.GanadorId.Value;
                 int? perdedor = null;
 
@@ -249,6 +205,8 @@ else
             }
         }
 
+        await JSRuntime.InvokeVoidAsync("alert", "Partida guardada correctamente.");
+        Navigation.NavigateTo("/Partidas/Index");
     }
 
     private void MarcarFinalizadaAhora()
@@ -258,37 +216,29 @@ else
         Partida.FechaFin = DateTime.UtcNow;
     }
 
-    private void MostrarModalEliminar()
-    {
-        ErrorEliminar = string.Empty;
-        mostrarConfirmacionEliminar = true;
-        StateHasChanged();
-    }
-
-    private void OcultarModalEliminar()
-    {
-        mostrarConfirmacionEliminar = false;
-        StateHasChanged();
-    }
-
     private async Task Eliminar()
     {
         if (Partida is null) return;
-        ErrorEliminar = string.Empty;
+
+        var confirmado = await JSRuntime.InvokeAsync<bool>(
+            "confirm",
+            "¿Está seguro que desea eliminar esta partida? Esta acción no se puede deshacer."
+        );
+
+        if (!confirmado) return;
 
         var ok = await partidasServices.Eliminar(Partida.PartidaId);
         if (ok)
         {
-            mostrarConfirmacionEliminar = false;
+            await JSRuntime.InvokeVoidAsync("alert", "Partida eliminada.");
             Navigation.NavigateTo("/Partidas/Index");
         }
         else
         {
-            ErrorEliminar = "No se pudo eliminar la partida.";
+            await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar la partida.");
         }
     }
 
     private async Task<bool> ExisteJugador(int jugadorId)
         => (await jugadoresServices.Listar(j => j.JugadorId == jugadorId)).Any();
 }
-

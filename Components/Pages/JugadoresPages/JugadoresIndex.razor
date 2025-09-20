@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/Jugadores/Index"
 @inject NavigationManager Navigation
 @inject JugadoresServices jugadoresServices
 @rendermode InteractiveServer
@@ -54,13 +54,13 @@
                     <tbody>
                         @foreach (var j in ListaJugadores)
                         {
-                            var total = j.Victorias + j.Derrotas + j.empate;
+                            var total = j.Victorias + j.Derrotas + j.Empate;
                             <tr>
                                 <td>@j.JugadorId</td>
                                 <td>@j.Nombres</td>
                                 <td>@j.Victorias</td>
                                 <td>@j.Derrotas</td>
-                                <td>@j.empate</td>
+                               <td>@j.Empate</td>
                                 <td>@total</td>
                                 <td class="text-center">
                                     <a href="/Jugador/Edit/@j.JugadorId" class="btn btn-outline-primary bi bi-pencil-square" title="Editar"></a>
@@ -78,7 +78,7 @@
             <div class="d-flex gap-3">
                 <label>Total Victorias: @ListaJugadores.Sum(x => x.Victorias)</label>
                 <label>Total Derrotas: @ListaJugadores.Sum(x => x.Derrotas)</label>
-                <label>Total Empates: @ListaJugadores.Sum(x => x.empate)</label>
+                <label>Total Empates: @ListaJugadores.Sum(x => x.Empate)</label>
             </div>
         </div>
     </div>

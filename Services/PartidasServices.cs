@@ -58,11 +58,13 @@ namespace Registro.Services
         {
             using var ctx = await _factory.CreateDbContextAsync();
             return await ctx.Partidas
-                            .Where(criterio)
-                            .OrderBy(e => e.PartidaId)
-                            .ToListAsync();
+                .Include(p => p.Jugador1)
+                .Include(p => p.Jugador2)
+                .Include(p => p.TurnoJugador)
+                .Include(p => p.Ganador)
+                .Where(criterio)
+                .OrderBy(e => e.PartidaId)
+                .ToListAsync();
         }
-
-
     }
 }

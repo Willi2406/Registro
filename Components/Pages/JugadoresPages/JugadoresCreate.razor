@@ -39,7 +39,7 @@
                     </div>
                     <div class="col">
                         <label class="form-label">Empates</label>
-                        <input class="form-control" value="@Jugador.empate" readonly />
+                        <input class="form-control" value="@Jugador.Empate" readonly />
                     </div>
                 </div>
             </div>
@@ -55,7 +55,7 @@
 </EditForm>
 
 @code {
-    public Jugadores Jugador { get; set; } = new() { Victorias = 0, Derrotas = 0, empate = 0 };
+    public Jugadores Jugador { get; set; } = new() { Victorias = 0, Derrotas = 0, Empate = 0 };
     public string ErrorNombre { get; set; } = string.Empty;
 
     private async Task Guardar()

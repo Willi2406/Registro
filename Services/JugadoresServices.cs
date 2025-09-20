@@ -82,8 +82,8 @@ namespace Registro.Services
             var j2 = await Buscar(jugador2Id);
             if (j1 is null || j2 is null) return;
 
-            j1.empate += 1;
-            j2.empate += 1;
+            j1.Empate += 1;
+            j2.Empate += 1;
             await Guardar(j1);
             await Guardar(j2);
         }
