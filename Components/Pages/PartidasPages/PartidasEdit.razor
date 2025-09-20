@@ -43,7 +43,7 @@ else
                             <option value="0" disabled>Seleccione el Jugador 1</option>
                             @foreach (var j in Jugadores)
                             {
-                                <option value="@j.JugadorId">@j.JugadorId  @j.Nombres</option>
+                                <option value="@j.JugadorId">@j.JugadorId - @j.Nombres</option>
                             }
                         </InputSelect>
                     </div>
@@ -54,7 +54,7 @@ else
                             <option value="">— Sin oponente —</option>
                             @foreach (var j in Jugadores)
                             {
-                                <option value="@j.JugadorId">@j.JugadorId — @j.Nombres</option>
+                                <option value="@j.JugadorId">@j.JugadorId - @j.Nombres</option>
                             }
                         </InputSelect>
                     </div>
@@ -111,7 +111,7 @@ else
     [Parameter] public int PartidaId { get; set; }
     private Partidas? Partida { get; set; }
     private List<Jugadores> Jugadores { get; set; } = new();
-    private readonly string[] EstadosPermitidos = new[] { "EnCurso", "Pendiente", "Finalizada" };
+    private readonly string[] EstadosPermitidos = new[] { "EnCurso", "Finalizada" };
     private bool cargando = true;
 
     protected override async Task OnInitializedAsync()

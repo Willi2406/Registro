@@ -9,28 +9,14 @@
 
 <PageTitle>TicTacToe</PageTitle>
 
-<div class="container mx-auto max-w-lg p-6 bg-white rounded-lg shadow-xl text-center">
-    <div class="game-container" style="display:flex;flex-direction:column;gap:1rem;align-items:center;padding-top:2rem">
+<div class="container mx-auto max-w-4xl p-6 bg-white rounded-lg shadow-xl">
+    <h1 class="text-center mb-4">TicTacToe</h1>
 
-        @if (partidaEnCurso != null)
-        {
-            <h2>Ya tienes una partida en curso</h2>
-            <p>
-                <strong>X:</strong> @partidaEnCurso.Jugador1?.Nombres •
-                <strong>O:</strong> @partidaEnCurso.Jugador2?.Nombres
-            </p>
-            <p><strong>Turno:</strong> @partidaEnCurso.TurnoJugador?.Nombres</p>
-
-            <button class="btn btn-primary" @onclick="@(() => IrAJuego(partidaEnCurso.PartidaId))">
-                Ir al tablero
-            </button>
-        }
-        else
-        {
-            <h1>Elige tus jugadores</h1>
-
-            <!-- Jugador X -->
-            <div class="w-100" style="max-width:420px">
+    <!-- Crear nueva partida -->
+    <div class="mb-4 p-3 border rounded">
+        <h4 class="mb-3">Crear nueva partida</h4>
+        <div class="row g-3">
+            <div class="col-md-6">
                 <label class="form-label d-flex align-items-center gap-2">
                     <span class="badge bg-primary">X</span>
                     <strong>Jugador X (azul oscuro)</strong>
@@ -44,8 +30,7 @@
                 </InputSelect>
             </div>
 
-            <!-- Jugador O (muestra todos pero deshabilita el que ya es X) -->
-            <div class="w-100" style="max-width:420px">
+            <div class="col-md-6">
                 <label class="form-label d-flex align-items-center gap-2">
                     <span class="badge bg-info text-dark">O</span>
                     <strong>Jugador O (azul claro)</strong>
@@ -60,31 +45,83 @@
                     }
                 </InputSelect>
             </div>
+        </div>
 
-            <button class="btn btn-success btn-lg mt-2"
+        <div class="mt-3">
+            <button class="btn btn-success"
                     disabled="@(JugadorXId <= 0 || JugadorOId <= 0)"
                     @onclick="StartGameAsync">
-                Iniciar Partida
+                Iniciar Partida (En Curso)
             </button>
-        }
+        </div>
     </div>
+
+    <!-- Listado: En curso -->
+    <h4 class="mb-2">Partidas en curso</h4>
+    @if (enCurso is null)
+    {
+        <p>Cargando...</p>
+    }
+    else if (enCurso.Count == 0)
+    {
+        <div class="alert alert-info">No hay partidas en curso.</div>
+    }
+    else
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>X</th>
+                        <th>O</th>
+                        <th>Turno</th>
+                        <th>Inicio</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in enCurso)
+                    {
+                        <tr>
+                            <td>@p.PartidaId</td>
+                            <td>@p.Jugador1?.Nombres</td>
+                            <td>@(p.Jugador2?.Nombres ?? "-")</td>
+                            <td>@(p.TurnoJugador?.Nombres ?? "-")</td>
+                            <td>@p.FechaInicio.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="text-end">
+                                <a class="btn btn-success" href="/Juego?partidaId=@p.PartidaId">Abrir / Jugar</a>
+                                <a class="btn btn-outline-primary ms-2" href="/Partida/Edit/@p.PartidaId" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
 
 @code {
     private List<Jugadores> Jugadores = new();
     private int JugadorXId = 0;
     private int JugadorOId = 0;
-    private Partidas? partidaEnCurso;
+
+    private List<Partidas>? enCurso;
+    private List<Partidas>? pendientes;
 
     protected override async Task OnInitializedAsync()
     {
-        // 1) Si hay partida en curso, la mostramos y NO permitimos crear otra
-        var enCurso = await partidasServices.Listar(p => p.EstadoPartida == "EnCurso");
-        partidaEnCurso = enCurso.OrderByDescending(p => p.FechaInicio).FirstOrDefault();
+        // Cargar selectores
+        Jugadores = await jugadoresServices.Listar(j => j.JugadorId > 0);
 
-        // 2) Cargamos jugadores para el selector cuando no hay partida en curso
-        if (partidaEnCurso is null)
-            Jugadores = await jugadoresServices.Listar(j => j.JugadorId > 0);
+        // Permitir varias partidas en curso a la vez (acepta "En Curso" y "EnCurso")
+        enCurso = await partidasServices.Listar(p =>
+            p.EstadoPartida == "En Curso" || p.EstadoPartida == "EnCurso");
+
+        // Pendientes
+        pendientes = await partidasServices.Listar(p => p.EstadoPartida == "Pendiente");
     }
 
     private async Task StartGameAsync()
@@ -102,25 +139,21 @@
 
         var partida = new Partidas
         {
-            Jugador1Id = JugadorXId,              // X
-            Jugador2Id = JugadorOId,              // O
-            EstadoPartida = "EnCurso",
-            EstadoTablero = "---------",          // 9 casillas
-            TurnoJugadorId = JugadorXId,          // inicia X
+            Jugador1Id = JugadorXId,      
+            Jugador2Id = JugadorOId,      
+            EstadoPartida = "En Curso",   
+            EstadoTablero = "---------",  
+            TurnoJugadorId = JugadorXId,   
             FechaInicio = DateTime.UtcNow
         };
 
-        var ok = await partidasServices.Guardar(partida); // Insertar
+        var ok = await partidasServices.Guardar(partida);
         if (!ok)
         {
             await JS.InvokeVoidAsync("alert", "Error al crear la partida.");
             return;
         }
 
-        IrAJuego(partida.PartidaId);
+        Nav.NavigateTo($"/Juego?partidaId={partida.PartidaId}");
     }
-
-    private void IrAJuego(int partidaId)
-        => Nav.NavigateTo($"/Juego?partidaId={partidaId}");
 }
-

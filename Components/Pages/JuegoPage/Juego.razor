@@ -60,7 +60,6 @@
         board = FromString(partida.EstadoTablero);
         turno = (partida.TurnoJugadorId == partida.Jugador1Id) ? PlayerType.X : PlayerType.O;
 
-        // ¿Ya terminó?
         juegoFinalizado = string.Equals(partida.EstadoPartida, "Finalizada", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -68,8 +67,8 @@
         => partida is null ? "" :
            juegoFinalizado
               ? (partida.GanadorId.HasValue
-                  ? $"🏆 ¡Ganó {(partida.GanadorId == partida.Jugador1Id ? $"X ({XName})" : $"O ({OName})")}!"
-                  : "🤝 ¡Empate!")
+                  ? $"🏁 Partida finalizada — Ganó {(partida.GanadorId == partida.Jugador1Id ? $"X ({XName})" : $"O ({OName})")}"
+                  : "🏁 Partida finalizada — 🤝 Empate")
               : $"Turno de: {(turno == PlayerType.X ? $"X ({XName})" : $"O ({OName})")}";
 
     private bool DeshabilitarCelda(int i) => juegoFinalizado || board[i] != null;
@@ -78,19 +77,15 @@
     {
         if (partida is null || DeshabilitarCelda(i)) return;
 
-        // 1) Pintar jugada local
         board[i] = turno;
 
-        // 2) ¿Ganador / Empate?
         var win = CheckForWinner();
         var draw = !win.HasValue && board.All(c => c != null);
 
-        // 3) Persistir tablero y estado/turno en BD
         partida.EstadoTablero = ToString(board);
 
         if (win.HasValue || draw)
         {
-            // Finalizar
             partida.EstadoPartida = "Finalizada";
             partida.FechaFin = DateTime.UtcNow;
 
@@ -100,27 +95,23 @@
                 if (ganadorId > 0)
                 {
                     partida.GanadorId = ganadorId;
-
-                    // Actualizar estadísticas de Jugadores
                     var perdedorId = (win.Value == PlayerType.X) ? (partida.Jugador2Id ?? 0) : partida.Jugador1Id;
                     if (perdedorId > 0)
-                        await jugadoresServices.RegistrarVictoria(ganadorId, perdedorId); // suma victoria/derrota
+                        await jugadoresServices.RegistrarVictoria(ganadorId, perdedorId);
                 }
             }
             else
             {
-                // Empate
                 partida.GanadorId = null;
                 if (partida.Jugador2Id.HasValue)
-                    await jugadoresServices.RegistrarEmpate(partida.Jugador1Id, partida.Jugador2Id.Value); // suma empate a ambos
+                    await jugadoresServices.RegistrarEmpate(partida.Jugador1Id, partida.Jugador2Id.Value);
             }
 
-            await partidasServices.Guardar(partida); // guarda Finalizada/Ganador/FechaFin
+            await partidasServices.Guardar(partida);
             juegoFinalizado = true;
         }
         else
         {
-            // Cambiar turno y guardar
             turno = (turno == PlayerType.X) ? PlayerType.O : PlayerType.X;
             partida.TurnoJugadorId = (turno == PlayerType.X) ? partida.Jugador1Id : (partida.Jugador2Id ?? partida.Jugador1Id);
             await partidasServices.Guardar(partida);
@@ -134,7 +125,7 @@
           new[]{0,1,2}, new[]{3,4,5}, new[]{6,7,8},
           new[]{0,3,6}, new[]{1,4,7}, new[]{2,5,8},
           new[]{0,4,8}, new[]{2,4,6}
-      };
+        };
         foreach (var l in lines)
         {
             var (a, b, c) = (l[0], l[1], l[2]);

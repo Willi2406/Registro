@@ -1,6 +1,6 @@
 ﻿@page "/Partidas/Index"
 @inject NavigationManager Navigation
-@inject PartidasServices partidasServices
+@inject Registro.Services.PartidasServices partidasServices
 @rendermode InteractiveServer
 
 <PageTitle>Registro de Partidas</PageTitle>
@@ -58,8 +58,8 @@
                             <th>Jugador1</th>
                             <th>Jugador2</th>
                             <th>Estado</th>
-                            <th>Turno</th>       
-                            <th>Ganador</th>      
+                            <th>Turno</th>
+                            <th>Ganador</th>
                             <th>Inicio</th>
                             <th>Fin</th>
                             <th class="text-center">Opciones</th>
@@ -74,10 +74,11 @@
                                 <td>@(p.Jugador2?.Nombres ?? "-")</td>
                                 <td>@p.EstadoPartida</td>
                                 <td>@p.TurnoJugador?.Nombres</td>
-                                <td>@(p.Ganador?.Nombres ?? "-")</td>
+                                <td>@GetGanadorTexto(p)</td>
                                 <td>@p.FechaInicio.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>@(p.FechaFin.HasValue? p.FechaFin.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-")</td>
                                 <td class="text-center">
+                                    <!-- Quitado JUGAR -->
                                     <a href="/Partida/Edit/@p.PartidaId" class="btn btn-outline-primary bi bi-pencil-square" title="Editar"></a>
                                 </td>
                             </tr>
@@ -90,7 +91,7 @@
         <div class="card-footer d-flex justify-content-between align-items-center">
             <label>Cantidad: @ListaPartidas.Count()</label>
             <div class="d-flex gap-3">
-                <label>En curso: @ListaPartidas.Count(x => EsEstado(x, "EnCurso"))</label>
+                <label>En curso: @ListaPartidas.Count(x => EsEstado(x, "En Curso") || EsEstado(x, "EnCurso"))</label>
                 <label>Finalizadas: @ListaPartidas.Count(x => EsEstado(x, "Finalizada"))</label>
             </div>
         </div>
@@ -117,7 +118,7 @@
         if (Filtro == "Estado" && !string.IsNullOrWhiteSpace(ValorFiltro))
         {
             var v = ValorFiltro.ToLower();
-            ListaPartidas = await partidasServices.Listar(p => p.EstadoPartida.ToLower().Contains(v));
+            ListaPartidas = await partidasServices.Listar(p => (p.EstadoPartida ?? "").ToLower().Contains(v));
         }
         else if (Filtro == "PartidaId" && int.TryParse(ValorFiltro, out var partidaId))
         {
@@ -157,5 +158,18 @@
 
     private static bool EsEstado(Partidas p, string estado)
         => string.Equals(p.EstadoPartida, estado, StringComparison.OrdinalIgnoreCase);
+
+    private static string GetGanadorTexto(Partidas p)
+    {
+        if (string.Equals(p.EstadoPartida, "Finalizada", StringComparison.OrdinalIgnoreCase))
+        {
+            // finalizada y sin ganador -> Empate
+            if (!p.GanadorId.HasValue)
+                return "Empate";
+            return p.Ganador?.Nombres ?? "-";
+        }
+        // si no ha finalizado, mantenemos "-"
+        return "-";
+    }
 }
 
